@@ -1,7 +1,16 @@
+/* global it, describe */
+
+'use strict';
+
 var request = require('request');
 var _ = require('lodash');
 var url = require('url');
 var grunt = require('grunt');
+
+var verbose = (grunt.option('verbose') !== undefined) ? grunt.option('verbose') : false;
+var urlBase = url.parse(process.env['xray.settings.url']);
+var xqyFiles = (process.env['xray.settings.files'] !== undefined) ? process.env['xray.settings.files'].split(',') : [undefined];
+var testDirectory = (process.env['xray.settings.testDir'] !== undefined) ? process.env['xray.settings.testDir'] : 'test';
 
 function isNumber(n) {
   return !isNaN(parseFloat(n)) && isFinite(n);
@@ -28,16 +37,6 @@ function transformError(module, error) {
   }
 }
 
-function transformModules(tests, modules) {
-  tests.module = [];
-  if (! Array.isArray(modules)) {
-    modules = [modules];
-  }
-  _.each(modules, function(module) {
-    transformModule(tests, module);
-  });
-}
-
 function transformModule(tests, module) {
   if (verbose) {
     grunt.verbose.writeln('transformModule \n\n' + JSON.stringify(module, null, 1));
@@ -59,13 +58,23 @@ function transformModule(tests, module) {
         return _test;
       });
       result[key] = test;
-    } else if (key == 'error') {
+    } else if (key === 'error') {
     } else {
       result[key] = value;
     }
   });
   transformError(_module, module.error);
   tests.module.push(_module);
+}
+
+function transformModules(tests, modules) {
+  tests.module = [];
+  if (! Array.isArray(modules)) {
+    modules = [modules];
+  }
+  _.each(modules, function(module) {
+    transformModule(tests, module);
+  });
 }
 
 function executeXqueryTests(module, success, error) {
@@ -75,7 +84,7 @@ function executeXqueryTests(module, success, error) {
   var xrayUrl = url.format(tempUrl);
   grunt.log.writeln('Execute XRay unit test on url [' + xrayUrl + ']');
   var req = request.get(xrayUrl, function(err, response, body) {
-    if (response.statusCode == 200) {
+    if (response.statusCode === 200) {
       body = JSON.parse(body);
       if (verbose) {
         grunt.verbose.writeln('tests \n\n' + JSON.stringify(body.tests, null, 2));
@@ -128,11 +137,6 @@ function checkTestError(module) {
     throw new Error(message);
   }
 }
-
-var verbose = (grunt.option('verbose') !== undefined) ? grunt.option('verbose') : false;
-var urlBase = url.parse(process.env['xray.settings.url']);
-var xqyFiles = (process.env['xray.settings.files'] !== undefined) ? process.env['xray.settings.files'].split(',') : [undefined];
-var testDirectory = (process.env['xray.settings.testDir'] !== undefined) ? process.env['xray.settings.testDir'] : 'test';
 
 describe('Execute XQuery Unit Tests in XRay', function() {
 
