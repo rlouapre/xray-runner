@@ -51,17 +51,63 @@ Directory name where unit test are located.
 
 #### settings.files
 Type: `String Array`
-Default value: `test`
 
 Unit test files to execute (support matching globbing pattern).
 
 ### Usage Examples
 
 #### Default Options
-In this example, the default options are used to do something with whatever. So if the `testing` file has the content `Testing` and the `123` file had the content `1 2 3`, the generated result would be `Testing, 1 2 3.`
+In this example, the plugin will execute all XRay tests located on server `http://localhost:9999/test`.
 
 ```js
+grunt.task.loadTasks('xray-runner/tasks')
+
 grunt.initConfig({
+  xray_runner: {
+    all: {
+      settings: {
+        url: 'http://localhost:9999',
+        testDir: 'test'
+      }
+    }
+  }
+});
+```
+
+#### Custom Options
+In this example, the plugin will execute only XRay tests located in `test/test1.xqy` on server `http://localhost:9999/test`.
+
+```js
+grunt.task.loadTasks('xray-runner/tasks')
+
+grunt.initConfig({
+  xray_runner: {
+    all: {
+      settings: {
+        url: 'http://localhost:9999',
+        testDir: 'test',
+        files: ['test/test1.xqy']
+      }
+    }
+  }
+});
+```
+
+In this example, the plugin is combined with watch so the tests are executed whenever XQuery files are changed.
+
+```js
+grunt.loadNpmTasks('grunt-contrib-watch');
+grunt.task.loadTasks('xray-runner/tasks')
+
+grunt.initConfig({
+  // Watch xqy files and execute xray-runner when they are modified
+  watch: {
+    options: {
+      spawn: false,
+    },
+    files: ['modules/**/*.xqy', 'test/**/*.xqy'],
+    tasks: ['xray_runner']
+  },
   xray_runner: {
     all: {
       settings: {
@@ -71,23 +117,6 @@ grunt.initConfig({
       }
     }
   }
-});
-```
-
-#### Custom Options
-In this example, custom options are used to do something else with whatever else. So if the `testing` file has the content `Testing` and the `123` file had the content `1 2 3`, the generated result in this case would be `Testing: 1 2 3 !!!`
-
-```js
-grunt.initConfig({
-  xray_runner: {
-    options: {
-      separator: ': ',
-      punctuation: ' !!!',
-    },
-    files: {
-      'dest/default_options': ['src/testing', 'src/123'],
-    },
-  },
 });
 ```
 
