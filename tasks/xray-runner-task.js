@@ -35,9 +35,11 @@ module.exports = function(grunt) {
 
     var files = [];
 
-    _.each(grunt.file.expand(this.data.settings.files), function(file) {
-      files.push(file);
-    });
+    if (this.data.settings.files !== undefined) {
+      _.each(grunt.file.expand(this.data.settings.files), function(file) {
+        files.push(file);
+      });
+    }
 
     if (files.length > 0) {
       this.data.settings.files = files;
