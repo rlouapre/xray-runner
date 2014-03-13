@@ -1,6 +1,6 @@
 {
   "name": "grunt-xray-runner",
-  "description": "The best Grunt plugin ever.",
+  "description": "Grunt plugin for XRay",
   "version": "0.1.1",
   "homepage": "https://github.com/rlouapre/xray-runner",
   "author": {
@@ -29,8 +29,9 @@
   "devDependencies": {
     "grunt-contrib-jshint": "~0.6.0",
     "grunt-contrib-clean": "~0.4.0",
-    "grunt-contrib-nodeunit": "~0.2.0",
-    "grunt": "~0.4.2"
+    "grunt": "~0.4.2",
+    "chai": "^1.9.0",
+    "grunt-mocha-test": "^0.9.4"
   },
   "peerDependencies": {
     "grunt": "~0.4.2"
@@ -41,6 +42,6 @@
   "dependencies": {
     "request": "~2.33.0",
     "lodash": "~2.4.1",
-    "jasmine-node": "~1.13.0"
+    "async": "^0.2.10"
   }
 }

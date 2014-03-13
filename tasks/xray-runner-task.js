@@ -16,107 +16,87 @@ module.exports = function(grunt) {
   grunt.registerMultiTask('xray_runner', 'Execute Xquery unit tests in Xray', function() {
 
     // TODO: Add support for argument in command line: grunt xray --files=fail.xqy
-    // console.log('files: ' + grunt.option('files'));
-    var template = (this.data.template !== undefined) ? this.data.template: 'xray-runner/tasks/lib/xray-runner.js';
     var verbose = (grunt.option('verbose') !== undefined) ? grunt.option('verbose') : false;
+    var async = require('async');
     var path = require('path');
     var _ = require('lodash');
-    var jasmine = require('jasmine-node');
+    var request = require('request');
     var util = require('util');
 
-    if (! grunt.file.exists(path.resolve(template))) {
-      throw new Error('Cannot find template ' + template);
+    // Validate task settings    
+    var settings = this.data.settings;
+    
+    if (! Array.isArray(settings.modules)) {
+      settings.modules = [settings.modules];
+    }
+    if (settings === undefined) {
+      grunt.fail.fatal('Invalid configuration [settings] should be:\n' + 
+        JSON.stringify({settings:{url:'http://localhost:9000', testDir: 'app/lib/test'}}, null, 2));
     }
 
     if (verbose) {
       grunt.verbose.writeln('name [' + this.name + '] - target [' + this.target + ']');
-      grunt.verbose.writeln('data ' + JSON.stringify(this.data.settings, null, 1));
+      grunt.verbose.writeln('data ' + JSON.stringify(settings, null, 1));
     }
-
-    var files = [];
-
-    if (this.data.settings.files !== undefined) {
-      _.each(grunt.file.expand(this.data.settings.files), function(file) {
-        files.push(file);
-      });
-    }
-
-    if (files.length > 0) {
-      this.data.settings.files = files;
-    }
-
-    grunt.verbose.writeln('files ' + this.data.settings.files);
-    grunt.verbose.writeln('testDir ' + this.data.settings.testDir);
-    var testDir = this.data.settings.testDir;
-    var isModule = (_.find(this.data.settings.files, function(file) {
-      return file.indexOf(testDir) === 0;
-    }) === undefined);
-
-    if (isModule) {
-      this.data.settings.files = undefined;
-    } else {
-      files = [];
-      _.each(this.data.settings.files, function (file) {
-        files.push(path.basename(file));
-      });
-      this.data.settings.files = files;
-    }
-
-    if (Array.isArray(this.data.settings.files)) {
-      this.data.settings.files = this.data.settings.files.join(',');
-    }
-
-    // Provide all settings to xray-runner
-    _.each(this.data.settings, function(value, key) {
-      if (value !== undefined) {
-        process.env['xray.settings.' + key] = value;
-      } else {
-        delete process.env['xray.settings.' + key];
-      }
-    });
 
     var done = this.async();
-    var forceExit = false;
+    var options = {verbose: verbose};
+    var Runner = require('./lib/runner');
+    var runner = new Runner(grunt, options);
 
-    var onComplete = function(runner, log) {
-      var exitCode;
-      util.print('\n');
-      if (runner.results().failedCount === 0) {
-        exitCode = 0;
-      } else {
-        exitCode = 1;
+    var errorMessages = [];
+    var failedMessages = [];
+    var total = 0;
+    var passed = 0;
+    var ignored = 0;
+    var failed = 0;
 
-        if (forceExit) {
-          process.exit(exitCode);
-        }
-      }
-      jasmine.getGlobal().jasmine.currentEnv_ = undefined;
-      done();
-    };
-
-    var options = {
-      specFolders:     [template],
-      isVerbose:       verbose,
-      showColors:      true,
-      teamcity:        false,
-      useRequireJs:    true,
-      coffee:          false,
-      onComplete:      onComplete,
-      jUnit: {
-        report: false,
-        savePath : './build/reports/jasmine/',
-        useDotNotation: true,
-        consolidate: true
-      }
-    };
-
-    try {
-      // since jasmine-node@1.0.28 an options object need to be passed
-      jasmine.executeSpecsInFolder(options);
-      grunt.verbose.ok();
-    } catch (e) {
-      grunt.error('Failed to execute "jasmine.executeSpecsInFolder": ' + e.stack);
+    function showReport(results) {
+      total += results.total;
+      passed += results.passed;
+      ignored += results.ignored;
+      failed += results.failed;
+      _.each(results.reports, function(report) {
+        errorMessages = errorMessages.concat(report.errorMessages);
+        failedMessages = failedMessages.concat(report.failedMessages);
+      });
     }
+    
+    function executeModuleTest(module, callback) {
+      var url = runner.getUrl(settings.url, settings.testDir, module);
+      grunt.log.subhead('Execute XRay unit test on url [' + url + ']');
+      var req = request.get(url, function(err, response, body) {
+        if (response.statusCode === 200) {
+          body = JSON.parse(body);
+          if (verbose) {
+            grunt.verbose.writeln('tests \n\n' + JSON.stringify(body.tests, null, 2));
+          }
+          runner.parseResponse(body.tests, showReport);
+        } else {
+          if (verbose) {
+            grunt.verbose.writeln('Request failed \n\n' + JSON.stringify(response.body, null, 2));
+          }
+          grunt.fail.fatal('Request failed code status [' + response.statusCode + '] for url: ' + url);
+        }
+        callback();
+      });
+    }
+
+    async.eachSeries(
+      settings.modules, 
+      executeModuleTest,
+      function(err) {
+        if (failedMessages.length > 0) {
+          grunt.fail.warn(failedMessages.join('\n'));
+        }
+        if (errorMessages.length > 0) {
+          grunt.fail.fatal(errorMessages.join('\n'));
+        }
+        grunt.log.writeln('Total [' + total + '] - passed [' + passed + '] - ignored [' + ignored + '] - failed [' + failed + ']');
+        grunt.log.ok();
+        done();
+      }
+    );
 
   });
 
