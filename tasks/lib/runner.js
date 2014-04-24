@@ -8,10 +8,11 @@ function isNumber(n) {
   return !isNaN(parseFloat(n)) && isFinite(n);
 }
 
-function Runner(grunt, options) {
+function Runner(grunt, options, settings) {
   var verbose = (options.verbose !== undefined) ? options.verbose : false;
   this.grunt = grunt;
   this.options = options;
+  this.settings = settings;
   
   var transformError = function(module, error) {
     if (isNumber(error)) {
@@ -86,7 +87,9 @@ function Runner(grunt, options) {
       errorMessages: [],
       failedMessages: []
     };
-    if (module.error !== undefined) {
+    if (Number(module.error) === 0) {
+      grunt.log.ok();
+    } else {
       // console.log(JSON.stringify(module, null, 2));
       var message = module.error.message;
       if (module.error.stack !== undefined) {
@@ -118,6 +121,10 @@ function Runner(grunt, options) {
     return report;
   };
 
+  var endsWith = function(str, suffix) {
+      return str.indexOf(suffix, str.length - suffix.length) !== -1;
+  }
+
   this.parseResponse = function(results, callback) {
     var response = {
       total: 0,
@@ -145,19 +152,20 @@ function Runner(grunt, options) {
         response.passed += report.passed;
         response.failed += report.failed;
       });
-
-
     } catch (err) {
       this.grunt.fail.fatal(err);
     }
     callback(response);
   };
 
-  this.getUrl = function(urlBase, dir, module) {
-    var url = require('url');
-    var tempUrl = url.parse(urlBase);
-    tempUrl.query = (module !== undefined) ? { 'dir': dir, 'modules': module, 'format': 'json' } : { 'dir': dir, 'format': 'json' };
-    return url.format(tempUrl);
+  this.getRequestOptions = function(module) {
+    var options = {};
+    if (this.settings.auth) {
+      options.auth = this.settings.auth;
+    }
+    options.url = this.settings.url + (endsWith(this.settings.url, '/')?'':'/');
+    options.qs = {'dir': this.settings.testDir, 'modules': module, 'format': 'json'};
+    return options
   };
 
 }

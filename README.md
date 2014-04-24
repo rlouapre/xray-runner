@@ -27,6 +27,12 @@ grunt.initConfig({
   xray_runner: {
     all: {
       settings: {
+        /* https://github.com/mikeal/request#http-authentication */
+        auth: {
+          username: 'admin',
+          password: 'admin',
+          sendImmediately: false
+        },
         url: 'http://localhost:9999',
         testDir: 'test',
         files: ['test/**/*.xqy']
@@ -66,6 +72,12 @@ grunt.initConfig({
   xray_runner: {
     all: {
       settings: {
+        /* https://github.com/mikeal/request#http-authentication */
+        auth: {
+          username: 'admin',
+          password: 'secret',
+          sendImmediately: false
+        },
         url: 'http://localhost:9999',
         testDir: 'test'
       }
@@ -84,6 +96,12 @@ grunt.initConfig({
   xray_runner: {
     all: {
       settings: {
+        /* https://github.com/mikeal/request#http-authentication */
+        auth: {
+          username: 'admin',
+          password: 'secret',
+          sendImmediately: false
+        },
         url: 'http://localhost:9999',
         testDir: 'test',
         files: ['test/test1.xqy']
@@ -111,6 +129,12 @@ grunt.initConfig({
   xray_runner: {
     all: {
       settings: {
+        /* https://github.com/mikeal/request#http-authentication */
+        auth: {
+          username: 'admin',
+          password: 'secret',
+          sendImmediately: false
+        },
         url: 'http://localhost:9999',
         testDir: 'test',
         files: ['test/**/*.xqy']

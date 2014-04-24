@@ -31,7 +31,7 @@ module.exports = function(grunt) {
     }
     if (settings === undefined) {
       grunt.fail.fatal('Invalid configuration [settings] should be:\n' + 
-        JSON.stringify({settings:{url:'http://localhost:9000', testDir: 'app/lib/test'}}, null, 2));
+        JSON.stringify({settings:{url:'http://localhost:9000/xray', testDir: 'app/lib/test'}}, null, 2));
     }
 
     if (verbose) {
@@ -42,7 +42,7 @@ module.exports = function(grunt) {
     var done = this.async();
     var options = {verbose: verbose};
     var Runner = require('./lib/runner');
-    var runner = new Runner(grunt, options);
+    var runner = new Runner(grunt, options, settings);
 
     var errorMessages = [];
     var failedMessages = [];
@@ -63,10 +63,12 @@ module.exports = function(grunt) {
     }
     
     function executeModuleTest(module, callback) {
-      var url = runner.getUrl(settings.url, settings.testDir, module);
-      grunt.log.subhead('Execute XRay unit test on url [' + url + ']');
-      var req = request.get(url, function(err, response, body) {
-        if (response.statusCode === 200) {
+      grunt.log.subhead('Execute XRay unit test for module [' + module + ']');
+      var options = runner.getRequestOptions(module)
+      request.post(options, function(error, response, body) {
+
+        if (!error && response.statusCode === 200) {
+          grunt.verbose.writeln(body);
           body = JSON.parse(body);
           if (verbose) {
             grunt.verbose.writeln('tests \n\n' + JSON.stringify(body.tests, null, 2));
@@ -76,7 +78,7 @@ module.exports = function(grunt) {
           if (verbose) {
             grunt.verbose.writeln('Request failed \n\n' + JSON.stringify(response.body, null, 2));
           }
-          grunt.fail.fatal('Request failed code status [' + response.statusCode + '] for url: ' + url);
+          grunt.fail.fatal('Request failed code status [' + response.statusCode + '] for module: ' + module);
         }
         callback();
       });
@@ -87,7 +89,7 @@ module.exports = function(grunt) {
       executeModuleTest,
       function(err) {
         if (failedMessages.length > 0) {
-          grunt.fail.warn(failedMessages.join('\n'));
+          grunt.fail.fatal(failedMessages.join('\n'));
         }
         if (errorMessages.length > 0) {
           grunt.fail.fatal(errorMessages.join('\n'));
