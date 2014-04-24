@@ -29,8 +29,7 @@ module.exports = function(grunt) {
 
     // Configuration to be run (and then tested).
     xray_runner: {
-      custom_options: {
-        // template: 'tasks/lib/xray-runner.js',
+      test_1: {
         options: {
         },
         settings: {
@@ -41,6 +40,19 @@ module.exports = function(grunt) {
           modules: 'test-validate-template.xqy'
         },
       },
+      test_2: {
+        options: {
+        },
+        settings: {
+          url: 'http://localhost:9015/xray',
+          testDir: 'xray/test',
+          modules: 'syntax-error.xqy'
+          // testDir: 'test',
+          // files: 'test-import-lib.xqy'
+          // modules: ['test-import-lib.xqy', 'test-validate-template.xqy']
+          // modules: 'test-validate-template.xqy'
+        },
+      }
     },
 
     // Unit tests.

@@ -86,7 +86,7 @@ function Runner(grunt, options) {
       errorMessages: [],
       failedMessages: []
     };
-    if (Number(module.error) !== 0) {
+    if (module.error !== undefined) {
       // console.log(JSON.stringify(module, null, 2));
       var message = module.error.message;
       if (module.error.stack !== undefined) {
